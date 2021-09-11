@@ -11,8 +11,8 @@
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    width="114.30927mm"
-   height="30.874817mm"
-   viewBox="0 0 114.30927 30.874816"
+   height="43.778454mm"
+   viewBox="0 0 114.30926 43.778453"
    version="1.1"
    id="svg8"
    inkscape:version="0.92.5 (2060ec1f9f, 2020-04-08)"
@@ -26,9 +26,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="0.74653477"
-     inkscape:cx="47.365583"
-     inkscape:cy="47.492131"
+     inkscape:zoom="1.4930695"
+     inkscape:cx="252.40041"
+     inkscape:cy="145.98816"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -307,12 +307,12 @@
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;font-size:13.97467709px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#666666;fill-opacity:1;stroke:none;stroke-width:0.74864346"
        x="110.44367"
-       y="264.89081"
+       y="295.72495"
        id="text910-0-2"><tspan
          sodipodi:role="line"
          id="tspan908-2-8"
          x="110.44367"
-         y="264.89081"
+         y="295.72495"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:arial;-inkscape-font-specification:arial;fill:#666666;fill-opacity:1;stroke-width:0.74864346">.xyz</tspan></text>
   </g>
 </svg>
