@@ -24,10 +24,15 @@
 		padding: 10px;
 		border-radius: 5px;
 		font-size: 1.3em;
+		box-sizing: border-box;
+		text-align: center;
 	}
 	#mainOutput { 
+		margin-top: 5%;
 		margin-left: 5%;
-		width: 95%;
+		width: 90%;
+		text-align: center;
+		font-size: 1.2em;
 	}
 	#footer {
 		position: absolute;
@@ -57,7 +62,7 @@
 			var req = new XMLHttpRequest();
 			req.onreadystatechange = function() { 
 				if (req.readyState == 4 && req.status == 200) {
-					mainOutput.text = req.responseText;
+					mainOutput.innerText = req.responseText;
 				}
 			}
 
