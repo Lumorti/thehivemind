@@ -13,9 +13,9 @@
 		max-width: 600px;
 		-webkit-transform: translate(-50%, -50%);
 		transform: translate(-50%, -50%);
+		text-align: center;
 	}
 	#mainTitle {
-		margin-left: 20%;
 		margin-bottom: 3%;
 		width: 60%;
 	}
@@ -28,9 +28,9 @@
 		text-align: center;
 	}
 	#mainOutput { 
-		margin-top: 5%;
-		margin-left: 5%;
-		width: 90%;
+		margin-top: 1.2em;
+		margin-bottom: 1.3em;
+		width: 100%;
 		text-align: center;
 		font-size: 1.2em;
 	}
@@ -39,17 +39,82 @@
 		left: 20px;
 		bottom: 20px;
 	}
+	button {
+		font-size: 1.1em;
+		display: inline-flex;
+		align-items: center;
+		padding-left: 0.9em;
+		padding-right: 0.8em;
+	}
+	#submitButton {
+		margin-left: 1.5em;
+	}
+	#editBox {
+		width: 100%;
+		font-size: 1.2em;
+		box-sizing: border-box;
+		margin-top: 1.2em;
+		margin-bottom: 1.2em;
+		text-align: center;
+		font-size: 1.2em;
+		font-family: Arial, sans-serif;
+		resize: vertical;
+	}
+	#editDiv {
+		display: none;
+	}
+	#editButton {
+		display: none;
+	}
 </style>
 <script>
 
 	// Global DOM elements
 	var mainInput = null;
 	var mainOutput = null;
+	var editBox = null;
+	var editButton = null;
+	var editDiv = null;
+	var responseDiv = null;
 
-	// Once the body has loaded, we can save references to objects
+	// Called once the body has loaded
 	function init() {
+
+		// Save various references to DOM elements
 		mainInput = document.getElementById("mainInput");
 		mainOutput = document.getElementById("mainOutput");
+		editBox = document.getElementById("editBox");
+		editButton = document.getElementById("editButton");
+		editDiv = document.getElementById("editDiv");
+		responseDiv = document.getElementById("responseDiv");
+
+		// If there's a hash, treat it as the input
+		if (window.location.hash.length > 0) {
+			mainInput.value = decodeURIComponent(window.location.hash.substr(1));
+			askQuestion();
+		}
+
+	}
+
+	// Triggered either on pressing enter or if page loaded with hash
+	function askQuestion() {
+
+		// When a response is received, change the output text
+		var req = new XMLHttpRequest();
+		req.onreadystatechange = function() { 
+			if (req.readyState == 4 && req.status == 200) {
+				mainOutput.innerText = req.responseText;
+				editButton.style.display = "inline-flex";
+			}
+		}
+
+		// Get the user's question
+		var question = encodeURIComponent(mainInput.value);
+
+		// Send this question as an async GET request
+		req.open("GET", question, true);
+		req.send(null);
+
 	}
 
 	// When a key is pressed in the main input box
@@ -58,22 +123,49 @@
 		// When the user presses enter
 		if (e.key == "Enter") {
 
-			// When a response is received, change the output text
-			var req = new XMLHttpRequest();
-			req.onreadystatechange = function() { 
-				if (req.readyState == 4 && req.status == 200) {
-					mainOutput.innerText = req.responseText;
-				}
-			}
+			// Ask the question to the server
+			askQuestion();
 
-			// Get the user's question
-			var question = "q" + mainInput.value;
-
-			// Send this question as a synchronous GET request
-			req.open("GET", question, true);
-			req.send(null);
+			// Set the url so they can share the page
+			window.location.hash = encodeURIComponent(mainInput.value);
 
 		}
+
+	}
+
+	// Called when the edit button is pressed
+	function startEdit() {
+
+		// Start the edit box with the response text
+		editBox.value = mainOutput.innerHTML;
+
+		// Switch to edit mode
+		responseDiv.style.display = "none";
+		editDiv.style.display = "block";
+
+	}
+
+	// Called when the cancel button is pressed
+	function cancelEdit() {
+
+		// Switch to normal mode
+		responseDiv.style.display = "block";
+		editDiv.style.display = "none";
+
+	}
+
+	// Called when the submit button is pressed
+	function submitEdit() {
+
+		// Create a new request object
+		var req = new XMLHttpRequest();
+
+		// Get the user's question
+		var editReq = editBox.value;
+
+		// Send this question as an async POST request
+		req.open("POST", "/edit", true);
+		req.send(editReq);
 
 	}
 
@@ -81,8 +173,16 @@
 <body onload="init()">
 	<div id="centered">
 		<img id="mainTitle" src="logo.svg"/>
-		<input id="mainInput" type="text" placeholder="type to the hive mind" onkeydown="onKeyPress(event)"></input>
-		<p id="mainOutput"></p>
+		<div id="responseDiv">
+			<input id="mainInput" type="text" placeholder="type to the hive mind" onkeydown="onKeyPress(event)"></input>
+			<p id="mainOutput"></p>
+			<button id="editButton" onclick="startEdit()">edit response</p>
+		</div>
+		<div id="editDiv">
+			<textarea type="text" id="editBox"></textarea>
+			<button id="cancelButton" onclick="cancelEdit()">cancel</p>
+			<button id="submitButton" onclick="submitEdit()">submit</p>
+		</div>
 	</div>
 	<div id="footer">
 		for more details, see the <a href="https://github.com/Lumorti/thehivemind">GitHub page</a>

@@ -17,13 +17,13 @@ const logoSVG = fs.readFileSync("logo.svg", "utf8");
 // The cache
 var cache = [];
 
-// Compare two questions and give a score TODO
+// Compare two questions and give a score
 function scoreFunction(question1, question2) {
 
 	// Between zero and one
 	var score = 0;
 
-	// Get the number of words that are the same TODO
+	// Get the number of words that are the same
 	var numSame = 0;
 	for (var i=0; i<question1.length; i++) {
 		for (var j=0; j<question2.length; j++) {
@@ -70,60 +70,77 @@ const server = http.createServer(async function (req, res) {
 		// Send the page
 		res.end(logoSVG);
 
+	// If asking for the favicon logo TODO
+	} else if (req.url == "/favicon.ico") {
+
+		// Set HTTPS header info
+		res.statusCode = 200;
+		res.setHeader('Content-Type', 'image/svg+xml');
+
+		// Send the page
+		res.end(logoSVG);
+
+	// If editting a response TODO
+	} else if (req.url == "/edit") {
+
+		console.log("edit request");
+
 	// If asking a question
-	} else if (req.url[1] == "q") {
+	} else {
 
 		// Process the question into words
-		var question = req.url.substring(2, 140);
+		var question = decodeURIComponent(req.url.substring(1, 140));
 		question = replaceAll(question, "%20", " ");
 		question = replaceAll(question, "\\?", " ");
 		question = replaceAll(question, "!", " ");
 		question = replaceAll(question, ",", " ");
 		question = replaceAll(question, "\\.", " ");
 		var split = question.split(" ");
-		console.log(question);
+
+		// Output the user's question
+		console.log("request: " + question);
 
 		// The default response
-		var bestMatch = ["", "I don't know how to respond to that, press edit to tell me"];
-		var hasFound = false;
+		var bestMatch = {q: [], a: "I don't know how to respond to that, press edit to tell me"};
+		var hasFound = 0;
+
+		// Find a certain number of candidates then pick the best one TODO
 
 		// Search the cache
 		for (var i=0; i<cache.length; i++) {
-			var val = scoreFunction(split, cache[i][0]);
+			var val = scoreFunction(split, cache[i].q);
 			if (val > minScore) {
 				bestMatch = cache[i];
-				hasFound = true;
+				hasFound = 1;
 				console.log("found in cache");
 				break;
 			}
 		}
 		
 		// If not in the cache
-		if (!hasFound) {
+		if (hasFound == 0) {
 
 			// Create an access point to the data file
 			const fileStream = fs.createReadStream("data.csv", {highWaterMark: chunkSize});
-			const rl = readline.createInterface({
-				input: fileStream,
-				crlfDelay: Infinity
-			});
 
 			// Get a certain amount of data from the file at once
-			for await (const data of rl) {
+			for await (const data of fileStream) {
 
 				// Put this into an object form
-				var qAndA = data.split("~");
+				var qAndA = data.toString().split("\n");
 				var tempCache = [];
-				for (var i=0; i<qAndA.length; i+=2) {
-					tempCache.push({q: qAndA[i], a: qAndA[i+1]});
+				var splitLoc = 0;
+				for (var i=0; i<qAndA.length-1; i++) {
+					splitLoc = qAndA[i].indexOf("~");
+					tempCache.push({q: qAndA[i].substr(0, splitLoc-1).split(" "), a: qAndA[i].substr(splitLoc+2, qAndA[i].length)});
 				}
 
-				// Search the temp cache TODO tempCache[i][0] can be undefined
+				// Search the temp cache
 				for (var i=0; i<tempCache.length; i++) {
-					var val = scoreFunction(tempCache[i][0], split);
+					var val = scoreFunction(split, tempCache[i].q);
 					if (val > minScore) {
 						bestMatch = tempCache[i];
-						hasFound = true;
+						hasFound = 2;
 						break;
 					}
 				}
@@ -139,12 +156,12 @@ const server = http.createServer(async function (req, res) {
 		}
 
 		// Move this to the top of the cache
-		if (hasFound) {
+		if (hasFound == 2) {
 			cache.unshift(bestMatch);
 			if (cache.length > cacheSize) {
 				cache.pop();
 			}
-		} else {
+		} else if (hasFound == 0) {
 			console.log("couldn't find anywhere");
 		}
 
@@ -153,10 +170,7 @@ const server = http.createServer(async function (req, res) {
 		res.setHeader('Content-Type', 'text/plain');
 
 		// Send the response
-		res.end(bestMatch[1]);
-		
-	// If an edit request TODO
-	} else if (req.url[1] == "e") {
+		res.end(bestMatch.a);
 
 	}
 
