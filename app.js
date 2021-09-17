@@ -7,12 +7,12 @@ const readline = require('readline');
 const hostname = '127.0.0.1';
 const port = 3000;
 const cacheSize = 100;
-const minScore = 0.7;
 const chunkSize = 10000000;
 
 // Load the files needed into memory
 const indexHTML = fs.readFileSync("index.html", "utf8");
 const logoSVG = fs.readFileSync("logo.svg", "utf8");
+const iconSVG = fs.readFileSync("favicon.svg", "utf8");
 
 // The cache
 var cache = [];
@@ -23,19 +23,48 @@ function scoreFunction(question1, question2) {
 	// Between zero and one
 	var score = 0;
 
-	// Get the number of words that are the same
+	// For each word in the first question
 	var numSame = 0;
 	for (var i=0; i<question1.length; i++) {
+
+		// See if it's the other question
+		var found = false;
 		for (var j=0; j<question2.length; j++) {
 			if (question1[i] == question2[j]) {
-				numSame += 1;
-				continue;
+				found = true;
+				break;
 			}
 		}
+
+		// Depending, adjust the unscaled score
+		if (found) {
+			numSame += 1;
+		} else {
+			numSame -= 2;
+		}
+
+	}
+
+	// Bonus points if there are same words at the same positions
+	for (var i=0; i<question1.length; i++) {
+
+		// The exact same
+		if (question1[i] == question2[i]) {
+			numSame += 1;
+
+		// Close enough
+		} else if () {
+
+		}
+
 	}
 
 	// Turn this into a percentage
-	score = numSame / question1.length;
+	score = numSame / (question1.length);
+
+	// TODO switch to mongodb and exact frasing plus redirects
+	console.log(question1);
+	console.log("vs", question2, "=", score.toFixed(3));
 
 	// Return the score
 	return score;
@@ -70,7 +99,7 @@ const server = http.createServer(async function (req, res) {
 		// Send the page
 		res.end(logoSVG);
 
-	// If asking for the favicon logo TODO
+	// If asking for the favicon logo
 	} else if (req.url == "/favicon.ico") {
 
 		// Set HTTPS header info
@@ -78,7 +107,7 @@ const server = http.createServer(async function (req, res) {
 		res.setHeader('Content-Type', 'image/svg+xml');
 
 		// Send the page
-		res.end(logoSVG);
+		res.end(iconSVG);
 
 	// If editting a response TODO
 	} else if (req.url == "/edit") {
@@ -104,12 +133,10 @@ const server = http.createServer(async function (req, res) {
 		var bestMatch = {q: [], a: "I don't know how to respond to that, press edit to tell me"};
 		var hasFound = 0;
 
-		// Find a certain number of candidates then pick the best one TODO
-
 		// Search the cache
 		for (var i=0; i<cache.length; i++) {
 			var val = scoreFunction(split, cache[i].q);
-			if (val > minScore) {
+			if (val >= 1) {
 				bestMatch = cache[i];
 				hasFound = 1;
 				console.log("found in cache");
@@ -138,7 +165,7 @@ const server = http.createServer(async function (req, res) {
 				// Search the temp cache
 				for (var i=0; i<tempCache.length; i++) {
 					var val = scoreFunction(split, tempCache[i].q);
-					if (val > minScore) {
+					if (val >= 1) {
 						bestMatch = tempCache[i];
 						hasFound = 2;
 						break;
