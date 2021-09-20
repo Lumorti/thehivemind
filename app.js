@@ -2,78 +2,42 @@
 const http = require('http');
 const fs = require('fs')
 const readline = require('readline');
+const crypto = require('crypto');
 
 // Server settings
 const hostname = '127.0.0.1';
 const port = 3000;
-const cacheSize = 100;
-const chunkSize = 10000000;
 
 // Load the files needed into memory
 const indexHTML = fs.readFileSync("index.html", "utf8");
 const logoSVG = fs.readFileSync("logo.svg", "utf8");
 const iconSVG = fs.readFileSync("favicon.svg", "utf8");
 
-// The cache
-var cache = [];
-
-// Compare two questions and give a score
-function scoreFunction(question1, question2) {
-
-	// Between zero and one
-	var score = 0;
-
-	// For each word in the first question
-	var numSame = 0;
-	for (var i=0; i<question1.length; i++) {
-
-		// See if it's the other question
-		var found = false;
-		for (var j=0; j<question2.length; j++) {
-			if (question1[i] == question2[j]) {
-				found = true;
-				break;
-			}
-		}
-
-		// Depending, adjust the unscaled score
-		if (found) {
-			numSame += 1;
-		} else {
-			numSame -= 2;
-		}
-
-	}
-
-	// Bonus points if there are same words at the same positions
-	for (var i=0; i<question1.length; i++) {
-
-		// The exact same
-		if (question1[i] == question2[i]) {
-			numSame += 1;
-
-		// Close enough
-		} else if () {
-
-		}
-
-	}
-
-	// Turn this into a percentage
-	score = numSame / (question1.length);
-
-	// TODO switch to mongodb and exact frasing plus redirects
-	console.log(question1);
-	console.log("vs", question2, "=", score.toFixed(3));
-
-	// Return the score
-	return score;
-
-};
+// Generic hash function (sha-256)
+function hash(input) {
+	return crypto.createHash("sha256").update(input).digest("hex");
+}
 
 // Utility function to replace all occurences in a string
 function replaceAll(str, find, replace) {
 	return str.replace(new RegExp(find, 'g'), replace);
+}
+
+// Turn a url-like string into a nicer form
+function processQuestion(q) {
+
+	// Decode it
+	q = decodeURIComponent(q.substring(1, 140));
+
+	// Replace various things
+	q = replaceAll(q, "\\?", " ");
+	q = replaceAll(q, "!", " ");
+	q = replaceAll(q, ",", " ");
+	q = replaceAll(q, "\\.", " ");
+
+	// Return the modified question
+	return q;
+
 }
 
 // Create the server object
@@ -109,95 +73,169 @@ const server = http.createServer(async function (req, res) {
 		// Send the page
 		res.end(iconSVG);
 
-	// If editting a response TODO
+	// If editting a response
 	} else if (req.url == "/edit") {
 
-		console.log("edit request");
+		// Hash the user's ip
+		var ipHash = hash(req.socket.remoteAddress);
+
+		// When the post data is recieved
+		req.on('data', data => {
+
+			// Extract the question and the answer
+			var qAndA = data.toString("utf8").split("~#~#~");
+
+			// Process the question and answer
+			var question = processQuestion(qAndA[0]);
+			var answer = processQuestion(qAndA[1]);
+
+			// Hash the question and its directory
+			var questionHash = hash(question);
+			var dirQuestion = "./q/" + questionHash[0] + "/" + questionHash[1] + "/" + questionHash[2] + "/";
+			var dirIPs = "./i/" + questionHash[0] + "/" + questionHash[1] + "/" + questionHash[2] + "/";
+			var pathQuestion = "./q/" + questionHash[0] + "/" + questionHash[1] + "/" + questionHash[2] + "/" + questionHash;
+			var pathIPs = "./i/" + questionHash[0] + "/" + questionHash[1] + "/" + questionHash[2] + "/" + questionHash;
+
+			// See if this file exists
+			fs.exists(pathQuestion, function (doesExist) {
+
+				// If the question exists
+				if (doesExist) {
+
+					// Check if an IP file exists
+					fs.exists(pathIPs, function (doesExist) {
+
+						// If it does, check if they can edit
+						if (doesExist) {
+
+							// Read the IP file
+							fs.readFile(pathIPs, 'utf8' , (err, data) => {
+								if (err) throw err;
+
+								// Stop if this IP hash in this file
+								var listIP = data.split("\n");
+								for (var i=0; i<listIP; i++) {
+									if (listIP[i] == ipHash) {
+										return;
+									}
+								}
+
+								// If it isn't, let them edit TODO
+
+							});
+							
+						// If it doesn't, let them edit
+						} else {
+
+							// Rewrite the question file TODO
+							
+							// Create the path for the ip list
+							fs.mkdir(dirIPs, {recursive: true}, (err) => {
+								if (err) throw err;
+							});
+
+							// Create the ip file
+							fs.writeFile(pathIPs, ipHash, function(err) {
+								if (err) throw err;
+							});
+
+						}
+
+					});
+
+				// If it doesn't, allow the change
+				} else {
+
+					// Output for debugging
+					console.log("created new file");
+
+					// Create the path for the question
+					fs.mkdir(dirQuestion, {recursive: true}, (err) => {
+						if (err) throw err;
+					});
+
+					// Create the question file
+					fs.writeFile(pathQuestion, answer, function(err) {
+						if (err) throw err;
+					});
+
+					// Create the path for the ip list
+					fs.mkdir(dirIPs, {recursive: true}, (err) => {
+						if (err) throw err;
+					});
+
+					// Create the ip file
+					fs.writeFile(pathIPs, ipHash, function(err) {
+						if (err) throw err;
+					});
+
+				}
+
+			});
+
+		});
 
 	// If asking a question
 	} else {
 
-		// Process the question into words
-		var question = decodeURIComponent(req.url.substring(1, 140));
-		question = replaceAll(question, "%20", " ");
-		question = replaceAll(question, "\\?", " ");
-		question = replaceAll(question, "!", " ");
-		question = replaceAll(question, ",", " ");
-		question = replaceAll(question, "\\.", " ");
-		var split = question.split(" ");
+		// Process the question
+		var question = processQuestion(req.url);
+
+		// Hash the question and its directory
+		var questionHash = hash(question);
+		var path = "./q/" + questionHash[0] + "/" + questionHash[1] + "/" + questionHash[2] + "/" + questionHash;
 
 		// Output the user's question
 		console.log("request: " + question);
-
-		// The default response
-		var bestMatch = {q: [], a: "I don't know how to respond to that, press edit to tell me"};
-		var hasFound = 0;
-
-		// Search the cache
-		for (var i=0; i<cache.length; i++) {
-			var val = scoreFunction(split, cache[i].q);
-			if (val >= 1) {
-				bestMatch = cache[i];
-				hasFound = 1;
-				console.log("found in cache");
-				break;
-			}
-		}
-		
-		// If not in the cache
-		if (hasFound == 0) {
-
-			// Create an access point to the data file
-			const fileStream = fs.createReadStream("data.csv", {highWaterMark: chunkSize});
-
-			// Get a certain amount of data from the file at once
-			for await (const data of fileStream) {
-
-				// Put this into an object form
-				var qAndA = data.toString().split("\n");
-				var tempCache = [];
-				var splitLoc = 0;
-				for (var i=0; i<qAndA.length-1; i++) {
-					splitLoc = qAndA[i].indexOf("~");
-					tempCache.push({q: qAndA[i].substr(0, splitLoc-1).split(" "), a: qAndA[i].substr(splitLoc+2, qAndA[i].length)});
-				}
-
-				// Search the temp cache
-				for (var i=0; i<tempCache.length; i++) {
-					var val = scoreFunction(split, tempCache[i].q);
-					if (val >= 1) {
-						bestMatch = tempCache[i];
-						hasFound = 2;
-						break;
-					}
-				}
-
-				// If found something good enough, stop
-				if (hasFound) {
-					console.log("found in file");
-					break;
-				}
-
-			}
-
-		}
-
-		// Move this to the top of the cache
-		if (hasFound == 2) {
-			cache.unshift(bestMatch);
-			if (cache.length > cacheSize) {
-				cache.pop();
-			}
-		} else if (hasFound == 0) {
-			console.log("couldn't find anywhere");
-		}
+		console.log("path: " + path);
 
 		// Set HTTPS header info
 		res.statusCode = 200;
 		res.setHeader('Content-Type', 'text/plain');
 
-		// Send the response
-		res.end(bestMatch.a);
+		// See if this file exists
+		fs.exists(path, function (doesExist) {
+
+			// If the file exists, read it and return the response
+			if (doesExist) {
+
+				// Read the file
+				fs.readFile(path, 'utf8' , (err, data) => {
+
+					// If there's some error
+					if (err) {
+
+						// Output the error 
+						console.error(err);
+
+						// Send the default response
+						res.end("I don't know how to respond to that, press edit to tell me");
+
+					// If everything goes well
+					} else {
+
+						// Output for debugging
+						console.log("found in file");
+
+						// First line is the response, the rest are IP hashes
+						res.end(data.split("\n")[0]);
+
+					}
+
+				})
+
+			// If it doesn't return the default response
+			} else {
+
+				// Output for debugging
+				console.log("path doesn't exist");
+
+				// Send the default response
+				res.end("I don't know how to respond to that, press edit to tell me");
+
+			}
+
+		});
 
 	}
 

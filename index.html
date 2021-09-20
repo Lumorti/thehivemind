@@ -34,6 +34,11 @@
 		text-align: center;
 		font-size: 1.2em;
 	}
+	#editHelp { 
+		margin-bottom: 0.1em;
+		width: 100%;
+		font-size: 1.2em;
+	}
 	#footer {
 		position: absolute;
 		left: 20px;
@@ -76,6 +81,7 @@
 	var editButton = null;
 	var editDiv = null;
 	var responseDiv = null;
+	var editHelp = null;
 
 	// Called once the body has loaded
 	function init() {
@@ -87,6 +93,7 @@
 		editButton = document.getElementById("editButton");
 		editDiv = document.getElementById("editDiv");
 		responseDiv = document.getElementById("responseDiv");
+		editHelp = document.getElementById("editHelp");
 
 		// If there's a hash, treat it as the input
 		if (window.location.hash.length > 0) {
@@ -139,6 +146,9 @@
 		// Start the edit box with the response text
 		editBox.value = mainOutput.innerHTML;
 
+		// Add the question to the help text
+		editHelp.innerHTML = "If someone said \"<i>" + mainInput.value + "</i>\", how would you answer?";
+
 		// Switch to edit mode
 		responseDiv.style.display = "none";
 		editDiv.style.display = "block";
@@ -160,8 +170,8 @@
 		// Create a new request object
 		var req = new XMLHttpRequest();
 
-		// Get the user's question
-		var editReq = editBox.value;
+		// Send the question and response
+		var editReq = mainInput.value + "~#~#~" + editBox.value;
 
 		// Send this question as an async POST request
 		req.open("POST", "/edit", true);
@@ -179,6 +189,7 @@
 			<button id="editButton" onclick="startEdit()">edit response</p>
 		</div>
 		<div id="editDiv">
+			<p id="editHelp"></p>
 			<textarea type="text" id="editBox"></textarea>
 			<button id="cancelButton" onclick="cancelEdit()">cancel</p>
 			<button id="submitButton" onclick="submitEdit()">submit</p>
