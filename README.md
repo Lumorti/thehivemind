@@ -1,3 +1,5 @@
+![thehivemind.xyz logo](./logo.svg)
+
 ### What is the hive mind?
 
 A website allowing communication with "the hive mind", an entity whose responses are set by you. Each IP address can edit the response of any page once per day, to any text they want. See something you don't like? Change it, no account required.
