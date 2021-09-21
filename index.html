@@ -52,6 +52,7 @@
 		padding-right: 0.8em;
 	}
 	#submitButton {
+		margin-top: 0.8em;
 		margin-left: 1.5em;
 	}
 	#editBox {
@@ -59,11 +60,17 @@
 		font-size: 1.2em;
 		box-sizing: border-box;
 		margin-top: 1.2em;
-		margin-bottom: 1.2em;
+		margin-bottom: 0.2em;
 		text-align: center;
 		font-size: 1.2em;
 		font-family: Arial, sans-serif;
 		resize: vertical;
+	}
+	#errorText {
+		color: red;
+		font-family: Arial, sans-serif;
+		display: none;
+		width: 100%;
 	}
 	#editDiv {
 		display: none;
@@ -82,6 +89,7 @@
 	var editDiv = null;
 	var responseDiv = null;
 	var editHelp = null;
+	var errorText = null;
 
 	// Called once the body has loaded
 	function init() {
@@ -94,6 +102,7 @@
 		editDiv = document.getElementById("editDiv");
 		responseDiv = document.getElementById("responseDiv");
 		editHelp = document.getElementById("editHelp");
+		errorText = document.getElementById("errorText");
 
 		// If there's a hash, treat it as the input
 		if (window.location.hash.length > 0) {
@@ -121,6 +130,9 @@
 		// Send this question as an async GET request
 		req.open("GET", question, true);
 		req.send(null);
+
+		// Now aren't sure whether they've editted already
+		errorText.style.display = "none";
 
 	}
 
@@ -169,6 +181,17 @@
 
 		// Create a new request object
 		var req = new XMLHttpRequest();
+		req.onreadystatechange = function() { 
+			if (req.readyState == 4 && req.status == 200) {
+				if (req.responseText == "no") {
+					errorText.style.display = "inline-block";
+				} else {
+					errorText.style.display = "none";
+					mainOutput.innerText = editBox.value;
+					cancelEdit();
+				}
+			}
+		}
 
 		// Send the question and response
 		var editReq = mainInput.value + "~#~#~" + editBox.value;
@@ -191,6 +214,7 @@
 		<div id="editDiv">
 			<p id="editHelp"></p>
 			<textarea type="text" id="editBox"></textarea>
+			<p id="errorText">sorry, you've already editted this response today</p>
 			<button id="cancelButton" onclick="cancelEdit()">cancel</p>
 			<button id="submitButton" onclick="submitEdit()">submit</p>
 		</div>

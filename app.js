@@ -1,11 +1,11 @@
 // Imports
-const http = require('http');
-const fs = require('fs')
-const readline = require('readline');
-const crypto = require('crypto');
+const http = require("http");
+const fs = require("fs")
+const readline = require("readline");
+const crypto = require("crypto");
 
 // Server settings
-const hostname = '127.0.0.1';
+const hostname = "127.0.0.1";
 const port = 3000;
 
 // Load the files needed into memory
@@ -20,14 +20,14 @@ function hash(input) {
 
 // Utility function to replace all occurences in a string
 function replaceAll(str, find, replace) {
-	return str.replace(new RegExp(find, 'g'), replace);
+	return str.replace(new RegExp(find, "g"), replace);
 }
 
 // Turn a url-like string into a nicer form
 function processQuestion(q) {
 
 	// Decode it
-	q = decodeURIComponent(q.substring(1, 140));
+	q = decodeURIComponent(q);
 
 	// Replace various things
 	q = replaceAll(q, "\\?", " ");
@@ -40,6 +40,17 @@ function processQuestion(q) {
 
 }
 
+// Turn a url-like string into a nicer form
+function processAnswer(q) {
+
+	// Decode it
+	q = decodeURIComponent(q);
+
+	// Return the modified answer
+	return q;
+
+}
+
 // Create the server object
 const server = http.createServer(async function (req, res) {
 
@@ -48,7 +59,7 @@ const server = http.createServer(async function (req, res) {
 
 		// Set HTTPS header info
 		res.statusCode = 200;
-		res.setHeader('Content-Type', 'text/html');
+		res.setHeader("Content-Type", "text/html");
 
 		// Send the page
 		res.end(indexHTML);
@@ -58,7 +69,7 @@ const server = http.createServer(async function (req, res) {
 
 		// Set HTTPS header info
 		res.statusCode = 200;
-		res.setHeader('Content-Type', 'image/svg+xml');
+		res.setHeader("Content-Type", "image/svg+xml");
 
 		// Send the page
 		res.end(logoSVG);
@@ -68,7 +79,7 @@ const server = http.createServer(async function (req, res) {
 
 		// Set HTTPS header info
 		res.statusCode = 200;
-		res.setHeader('Content-Type', 'image/svg+xml');
+		res.setHeader("Content-Type", "image/svg+xml");
 
 		// Send the page
 		res.end(iconSVG);
@@ -79,15 +90,20 @@ const server = http.createServer(async function (req, res) {
 		// Hash the user's ip
 		var ipHash = hash(req.socket.remoteAddress);
 
+		// Set HTTPS header info
+		res.statusCode = 200;
+		res.setHeader("Content-Type", "text/plain");
+
 		// When the post data is recieved
-		req.on('data', data => {
+		req.on("data", data => {
 
 			// Extract the question and the answer
 			var qAndA = data.toString("utf8").split("~#~#~");
 
 			// Process the question and answer
 			var question = processQuestion(qAndA[0]);
-			var answer = processQuestion(qAndA[1]);
+			var answer = processAnswer(qAndA[1]);
+			var inFile = question + "\n" + answer;
 
 			// Hash the question and its directory
 			var questionHash = hash(question);
@@ -95,6 +111,9 @@ const server = http.createServer(async function (req, res) {
 			var dirIPs = "./i/" + questionHash[0] + "/" + questionHash[1] + "/" + questionHash[2] + "/";
 			var pathQuestion = "./q/" + questionHash[0] + "/" + questionHash[1] + "/" + questionHash[2] + "/" + questionHash;
 			var pathIPs = "./i/" + questionHash[0] + "/" + questionHash[1] + "/" + questionHash[2] + "/" + questionHash;
+
+			// For debugging
+			console.log("edit: " + questionHash);
 
 			// See if this file exists
 			fs.exists(pathQuestion, function (doesExist) {
@@ -109,35 +128,61 @@ const server = http.createServer(async function (req, res) {
 						if (doesExist) {
 
 							// Read the IP file
-							fs.readFile(pathIPs, 'utf8' , (err, data) => {
+							fs.readFile(pathIPs, "utf8" , (err, data) => {
 								if (err) throw err;
 
 								// Stop if this IP hash in this file
 								var listIP = data.split("\n");
-								for (var i=0; i<listIP; i++) {
+								for (var i=0; i<listIP.length; i++) {
 									if (listIP[i] == ipHash) {
+										console.log("user was already in the ip file");
+										res.end("no");
 										return;
 									}
 								}
 
-								// If it isn't, let them edit TODO
+								// Output for debugging
+								console.log("rewrote question file, added to ip file");
+
+								// Rewrite the question file
+								fs.writeFile(pathQuestion, inFile, function(err) {
+									if (err) throw err;
+								});
+
+								// Add their IP to the IP file
+								fs.appendFile(pathIPs, ipHash + "\n", function (err) {
+									if (err) throw err;
+								});
+
+								// Everything went fine
+								res.end("yes");
 
 							});
 							
 						// If it doesn't, let them edit
 						} else {
 
-							// Rewrite the question file TODO
+							// Output for debugging
+							console.log("rewrote question file, created ip file");
+
+							// Rewrite the question file
+							fs.writeFile(pathQuestion, inFile, function(err) {
+								if (err) throw err;
+							});
 							
 							// Create the path for the ip list
 							fs.mkdir(dirIPs, {recursive: true}, (err) => {
 								if (err) throw err;
+
+								// Create the ip file
+								fs.writeFile(pathIPs, ipHash, function(err) {
+									if (err) throw err;
+								});
+
 							});
 
-							// Create the ip file
-							fs.writeFile(pathIPs, ipHash, function(err) {
-								if (err) throw err;
-							});
+							// Everything went fine
+							res.end("yes");
 
 						}
 
@@ -147,27 +192,32 @@ const server = http.createServer(async function (req, res) {
 				} else {
 
 					// Output for debugging
-					console.log("created new file");
+					console.log("created new question and ip files");
 
 					// Create the path for the question
 					fs.mkdir(dirQuestion, {recursive: true}, (err) => {
 						if (err) throw err;
-					});
 
-					// Create the question file
-					fs.writeFile(pathQuestion, answer, function(err) {
-						if (err) throw err;
+						// Create the question file
+						fs.writeFile(pathQuestion, question + "\n" + answer, function(err) {
+							if (err) throw err;
+						});
+
 					});
 
 					// Create the path for the ip list
 					fs.mkdir(dirIPs, {recursive: true}, (err) => {
 						if (err) throw err;
+
+						// Create the ip file
+						fs.writeFile(pathIPs, ipHash, function(err) {
+							if (err) throw err;
+						});
+
 					});
 
-					// Create the ip file
-					fs.writeFile(pathIPs, ipHash, function(err) {
-						if (err) throw err;
-					});
+					// Everything went fine
+					res.end("yes");
 
 				}
 
@@ -179,19 +229,18 @@ const server = http.createServer(async function (req, res) {
 	} else {
 
 		// Process the question
-		var question = processQuestion(req.url);
+		var question = processQuestion(req.url.substr(1, req.url.length-1));
 
 		// Hash the question and its directory
 		var questionHash = hash(question);
 		var path = "./q/" + questionHash[0] + "/" + questionHash[1] + "/" + questionHash[2] + "/" + questionHash;
 
-		// Output the user's question
-		console.log("request: " + question);
-		console.log("path: " + path);
+		// For debugging
+		console.log("request: " + questionHash);
 
 		// Set HTTPS header info
 		res.statusCode = 200;
-		res.setHeader('Content-Type', 'text/plain');
+		res.setHeader("Content-Type", "text/plain");
 
 		// See if this file exists
 		fs.exists(path, function (doesExist) {
@@ -200,7 +249,7 @@ const server = http.createServer(async function (req, res) {
 			if (doesExist) {
 
 				// Read the file
-				fs.readFile(path, 'utf8' , (err, data) => {
+				fs.readFile(path, "utf8" , (err, data) => {
 
 					// If there's some error
 					if (err) {
@@ -217,8 +266,8 @@ const server = http.createServer(async function (req, res) {
 						// Output for debugging
 						console.log("found in file");
 
-						// First line is the response, the rest are IP hashes
-						res.end(data.split("\n")[0]);
+						// First line is the question, the second is the answer
+						res.end(data.split("\n")[1]);
 
 					}
 
