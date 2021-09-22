@@ -33,6 +33,7 @@
 		width: 100%;
 		text-align: center;
 		font-size: 1.2em;
+		overflow-wrap: break-word;
 	}
 	#editHelp { 
 		margin-bottom: 0.1em;
@@ -127,12 +128,17 @@
 		// Get the user's question
 		var question = encodeURIComponent(mainInput.value);
 
-		// Send this question as an async GET request
-		req.open("GET", question, true);
-		req.send(null);
+		// Ensure it's a non-trivial request
+		if (question.length > 0) {
 
-		// Now aren't sure whether they've editted already
-		errorText.style.display = "none";
+			// Send this question as an async GET request
+			req.open("GET", question, true);
+			req.send(null);
+
+			// Now aren't sure whether they've editted already
+			errorText.style.display = "none";
+
+		}
 
 	}
 
@@ -193,27 +199,32 @@
 			}
 		}
 
-		// Send the question and response
-		var editReq = mainInput.value + "~#~#~" + editBox.value;
+		// Ensure it's a non-trivial request
+		if (mainInput.value.length > 0 && editBox.value.length > 0) {
 
-		// Send this question as an async POST request
-		req.open("POST", "/edit", true);
-		req.send(editReq);
+			// Send the question and response
+			var editReq = mainInput.value + "~#~#~" + editBox.value;
+
+			// Send this question as an async POST request
+			req.open("POST", "/edit", true);
+			req.send(editReq);
+
+		}
 
 	}
 
 </script>
 <body onload="init()">
 	<div id="centered">
-		<img id="mainTitle" src="logo.svg"/>
+		<a href="http://www.thehivemind.xyz"><img id="mainTitle" src="logo.svg"/></a>
 		<div id="responseDiv">
-			<input id="mainInput" type="text" placeholder="type to the hive mind" onkeydown="onKeyPress(event)"></input>
+			<input maxlength="40" id="mainInput" type="text" placeholder="type to the hive mind" onkeydown="onKeyPress(event)"></input>
 			<p id="mainOutput"></p>
 			<button id="editButton" onclick="startEdit()">edit response</p>
 		</div>
 		<div id="editDiv">
 			<p id="editHelp"></p>
-			<textarea type="text" id="editBox"></textarea>
+			<textarea maxlength="250" type="text" id="editBox"></textarea>
 			<p id="errorText">sorry, you've already editted this response today</p>
 			<button id="cancelButton" onclick="cancelEdit()">cancel</p>
 			<button id="submitButton" onclick="submitEdit()">submit</p>

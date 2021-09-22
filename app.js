@@ -7,6 +7,8 @@ const crypto = require("crypto");
 // Server settings
 const hostname = "127.0.0.1";
 const port = 3000;
+const maxQuestionLength = 40;
+const maxAnswerLength = 250;
 
 // Load the files needed into memory
 const indexHTML = fs.readFileSync("index.html", "utf8");
@@ -29,11 +31,14 @@ function processQuestion(q) {
 	// Decode it
 	q = decodeURIComponent(q);
 
+	// Insist on lowercase
+	q = q.toLowerCase();
+
 	// Replace various things
-	q = replaceAll(q, "\\?", " ");
-	q = replaceAll(q, "!", " ");
-	q = replaceAll(q, ",", " ");
-	q = replaceAll(q, "\\.", " ");
+	q = replaceAll(q, "[\\?!,'-\\.]", "");
+
+	// Strip the leading and trailing spaces 
+	q = q.trim();
 
 	// Return the modified question
 	return q;
@@ -105,15 +110,17 @@ const server = http.createServer(async function (req, res) {
 			var answer = processAnswer(qAndA[1]);
 			var inFile = question + "\n" + answer;
 
+			// Ensure it has at least something
+			if (question.length == 0 || answer.length == 0 || question.length > maxQuestionLength || answer.length > maxAnswerLength) {
+				return;
+			}
+
 			// Hash the question and its directory
 			var questionHash = hash(question);
 			var dirQuestion = "./q/" + questionHash[0] + "/" + questionHash[1] + "/" + questionHash[2] + "/";
 			var dirIPs = "./i/" + questionHash[0] + "/" + questionHash[1] + "/" + questionHash[2] + "/";
 			var pathQuestion = "./q/" + questionHash[0] + "/" + questionHash[1] + "/" + questionHash[2] + "/" + questionHash;
 			var pathIPs = "./i/" + questionHash[0] + "/" + questionHash[1] + "/" + questionHash[2] + "/" + questionHash;
-
-			// For debugging
-			console.log("edit: " + questionHash);
 
 			// See if this file exists
 			fs.exists(pathQuestion, function (doesExist) {
@@ -135,14 +142,10 @@ const server = http.createServer(async function (req, res) {
 								var listIP = data.split("\n");
 								for (var i=0; i<listIP.length; i++) {
 									if (listIP[i] == ipHash) {
-										console.log("user was already in the ip file");
 										res.end("no");
 										return;
 									}
 								}
-
-								// Output for debugging
-								console.log("rewrote question file, added to ip file");
 
 								// Rewrite the question file
 								fs.writeFile(pathQuestion, inFile, function(err) {
@@ -161,9 +164,6 @@ const server = http.createServer(async function (req, res) {
 							
 						// If it doesn't, let them edit
 						} else {
-
-							// Output for debugging
-							console.log("rewrote question file, created ip file");
 
 							// Rewrite the question file
 							fs.writeFile(pathQuestion, inFile, function(err) {
@@ -190,9 +190,6 @@ const server = http.createServer(async function (req, res) {
 
 				// If it doesn't, allow the change
 				} else {
-
-					// Output for debugging
-					console.log("created new question and ip files");
 
 					// Create the path for the question
 					fs.mkdir(dirQuestion, {recursive: true}, (err) => {
@@ -235,9 +232,6 @@ const server = http.createServer(async function (req, res) {
 		var questionHash = hash(question);
 		var path = "./q/" + questionHash[0] + "/" + questionHash[1] + "/" + questionHash[2] + "/" + questionHash;
 
-		// For debugging
-		console.log("request: " + questionHash);
-
 		// Set HTTPS header info
 		res.statusCode = 200;
 		res.setHeader("Content-Type", "text/plain");
@@ -250,34 +244,15 @@ const server = http.createServer(async function (req, res) {
 
 				// Read the file
 				fs.readFile(path, "utf8" , (err, data) => {
+					if (err) throw err;
 
-					// If there's some error
-					if (err) {
-
-						// Output the error 
-						console.error(err);
-
-						// Send the default response
-						res.end("I don't know how to respond to that, press edit to tell me");
-
-					// If everything goes well
-					} else {
-
-						// Output for debugging
-						console.log("found in file");
-
-						// First line is the question, the second is the answer
-						res.end(data.split("\n")[1]);
-
-					}
+					// First line is the question, the second is the answer
+					res.end(data.split("\n")[1]);
 
 				})
 
 			// If it doesn't return the default response
 			} else {
-
-				// Output for debugging
-				console.log("path doesn't exist");
 
 				// Send the default response
 				res.end("I don't know how to respond to that, press edit to tell me");
@@ -290,8 +265,16 @@ const server = http.createServer(async function (req, res) {
 
 });
 
+// Delete the ip list directory
+function resetIPLists() {
+	fs.rmdirSync("./i/", {recursive: true});
+}
+
 // Start the server
 server.listen(port, hostname, () => {
 	console.log(`Server running on http://${hostname}:${port}/`);
 });
+
+// Every 24 hours, reset the ip lists
+setTimeout(resetIPLists, 86400000);
 
