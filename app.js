@@ -3,10 +3,11 @@ const http = require("http");
 const fs = require("fs")
 const readline = require("readline");
 const crypto = require("crypto");
+const schedule = require('node-schedule');
 
 // Server settings
 const hostname = "127.0.0.1";
-const port = 3000;
+const port = 8080;
 const maxQuestionLength = 40;
 const maxAnswerLength = 250;
 
@@ -14,6 +15,9 @@ const maxAnswerLength = 250;
 const indexHTML = fs.readFileSync("index.html", "utf8");
 const logoSVG = fs.readFileSync("logo.svg", "utf8");
 const iconSVG = fs.readFileSync("favicon.svg", "utf8");
+
+// Generate a random salt
+const salt = (Math.random() + 1).toString(36).substring(7);
 
 // Generic hash function (sha-256)
 function hash(input) {
@@ -93,7 +97,7 @@ const server = http.createServer(async function (req, res) {
 	} else if (req.url == "/edit") {
 
 		// Hash the user's ip
-		var ipHash = hash(req.socket.remoteAddress);
+		var ipHash = hash(req.socket.remoteAddress+salt);
 
 		// Set HTTPS header info
 		res.statusCode = 200;
@@ -276,5 +280,5 @@ server.listen(port, hostname, () => {
 });
 
 // Every 24 hours, reset the ip lists
-setTimeout(resetIPLists, 86400000);
+const job = schedule.scheduleJob("0 0 * * *", resetIPLists);
 
