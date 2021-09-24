@@ -5,8 +5,8 @@ const readline = require("readline");
 const crypto = require("crypto");
 
 // Server settings
-const hostname = "127.0.0.1";
-const port = 3000;
+const hostname = "172.31.16.214";
+const port = 8080;
 const maxQuestionLength = 40;
 const maxAnswerLength = 250;
 
