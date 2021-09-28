@@ -3,6 +3,7 @@ const http = require("http");
 const fs = require("fs")
 const readline = require("readline");
 const crypto = require("crypto");
+const schedule = require('node-schedule');
 
 // Server settings
 const hostname = "172.31.16.214";
@@ -13,7 +14,9 @@ const maxAnswerLength = 250;
 // Load the files needed into memory
 const indexHTML = fs.readFileSync("index.html", "utf8");
 const logoSVG = fs.readFileSync("logo.svg", "utf8");
-const iconSVG = fs.readFileSync("favicon.svg", "utf8");
+
+// Generate a random salt
+const salt = (Math.random() + 1).toString(36).substring(7);
 
 // Generic hash function (sha-256)
 function hash(input) {
@@ -30,6 +33,9 @@ function processQuestion(q) {
 
 	// Decode it
 	q = decodeURIComponent(q);
+
+	// Max length
+	q = q.substr(0, maxQuestionLength);
 
 	// Insist on lowercase
 	q = q.toLowerCase();
@@ -50,6 +56,9 @@ function processAnswer(q) {
 
 	// Decode it
 	q = decodeURIComponent(q);
+
+	// Max length
+	q = q.substr(0, maxAnswerLength);
 
 	// Return the modified answer
 	return q;
@@ -79,21 +88,11 @@ const server = http.createServer(async function (req, res) {
 		// Send the page
 		res.end(logoSVG);
 
-	// If asking for the favicon logo
-	} else if (req.url == "/favicon.ico") {
-
-		// Set HTTPS header info
-		res.statusCode = 200;
-		res.setHeader("Content-Type", "image/svg+xml");
-
-		// Send the page
-		res.end(iconSVG);
-
 	// If editting a response
 	} else if (req.url == "/edit") {
 
 		// Hash the user's ip
-		var ipHash = hash(req.socket.remoteAddress);
+		var ipHash = hash(req.socket.remoteAddress+salt);
 
 		// Set HTTPS header info
 		res.statusCode = 200;
@@ -111,7 +110,7 @@ const server = http.createServer(async function (req, res) {
 			var inFile = question + "\n" + answer;
 
 			// Ensure it has at least something
-			if (question.length == 0 || answer.length == 0 || question.length > maxQuestionLength || answer.length > maxAnswerLength) {
+			if (question.length == 0 || answer.length == 0) {
 				return;
 			}
 
@@ -255,7 +254,7 @@ const server = http.createServer(async function (req, res) {
 			} else {
 
 				// Send the default response
-				res.end("I don't know how to respond to that, press edit to tell me");
+				res.end("");
 
 			}
 
@@ -267,7 +266,7 @@ const server = http.createServer(async function (req, res) {
 
 // Delete the ip list directory
 function resetIPLists() {
-	fs.rmdirSync("./i/", {recursive: true});
+	fs.rmSync("./i/", {recursive: true});
 }
 
 // Start the server
@@ -276,5 +275,5 @@ server.listen(port, hostname, () => {
 });
 
 // Every 24 hours, reset the ip lists
-setTimeout(resetIPLists, 86400000);
+const job = schedule.scheduleJob("0 0 * * *", resetIPLists);
 
