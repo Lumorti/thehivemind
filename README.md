@@ -18,4 +18,4 @@ At the start, using my own money. If this becomes more popular and needs a large
 
 ### Why is it called the "hive mind"?
 
-When we look at a person, we don't see a collection of cells all working together, we see their combined efforts in the form of a single object. Humanity can also be seen as one entity, and we are to humanity as your cells are to you, a swarming mass of individual things which add up to something greater. Imagine being able to speak to humanity as a collective, as though asking questions to the "average" of every mind.
+When we look at a person, we don't see a collection of cells all working together, we see their combined efforts in the form of a single object. Humanity can also be seen as one entity, and we are to humanity as your cells are to you, a swarming mass of individual things which add up to something greater. If enough people edit this reguarly, then it will become a kind of "average" of people's responses to questions.
