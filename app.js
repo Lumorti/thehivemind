@@ -16,7 +16,12 @@ const indexHTML = fs.readFileSync("index.html", "utf8");
 const logoSVG = fs.readFileSync("logo.svg", "utf8");
 
 // Generate a random salt
-const salt = (Math.random() + 1).toString(36).substring(7);
+var salt = genSalt();
+
+// Generate a random salt
+function genSalt() {
+	return (Math.random() + 1).toString(36).substring(7);
+}
 
 // Generic hash function (sha-256)
 function hash(input) {
@@ -267,6 +272,7 @@ const server = http.createServer(async function (req, res) {
 // Delete the ip list directory
 function resetIPLists() {
 	fs.rmSync("./i/", {recursive: true});
+	salt = genSalt();
 }
 
 // Start the server
