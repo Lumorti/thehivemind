@@ -9,7 +9,7 @@
 <meta name="designer" content="Lumorti">
 <meta name="publisher" content="Lumorti">
 <title>the hive mind</title>
-<meta name="description" content="Speak to our hive mind">
+<meta name="description" content="Speak to the hive mind">
 <meta name="keywords" content="hive, mind, information, open, source">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 </head>
@@ -108,6 +108,7 @@
 
 	// Keep track of whether the last response was a default one
 	var wasDefault = false;
+	var question = "";
 
 	// Called whenever the site is resized
 	function whenResized() {
@@ -168,13 +169,14 @@
 		}
 
 		// Get the user's question
-		var question = encodeURIComponent(mainInput.value);
+		question = mainInput.value.trim();
+		var encodedQuestion = encodeURIComponent(question);
 
 		// Ensure it's a non-trivial request
 		if (question.length > 0) {
 
 			// Send this question as an async GET request
-			req.open("GET", question, true);
+			req.open("GET", encodedQuestion, true);
 			req.send(null);
 
 			// Now aren't sure whether they've editted already
@@ -211,7 +213,7 @@
 		}
 
 		// Add the question to the help text
-		editHelp.innerHTML = "If someone said \"<i>" + mainInput.value + "</i>\", how would you answer?";
+		editHelp.innerHTML = "If someone said \"<i>" + question + "</i>\", how would you answer?";
 
 		// Switch to edit mode
 		responseDiv.style.display = "none";
@@ -250,7 +252,7 @@
 		if (mainInput.value.length > 0 && editBox.value.length > 0) {
 
 			// Send the question and response
-			var editReq = mainInput.value + "~#~#~" + editBox.value;
+			var editReq = question + "~#~#~" + editBox.value;
 
 			// Send this question as an async POST request
 			req.open("POST", "/edit", true);
