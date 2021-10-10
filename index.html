@@ -43,15 +43,11 @@
 	#mainOutput { 
 		margin-top: 1.2em;
 		margin-bottom: 1.3em;
-		width: 100%;
+		margin-left: 5%;
+		width: 90%;
 		text-align: center;
 		font-size: 1.2em;
 		overflow-wrap: break-word;
-	}
-	#footer {
-		position: absolute;
-		bottom: 1em;
-		left: 1em;
 	}
 	#editHelp { 
 		margin-bottom: 0.1em;
@@ -104,7 +100,6 @@
 	var responseDiv = null;
 	var editHelp = null;
 	var errorText = null;
-	var footer = null;
 
 	// Keep track of whether the last response was a default one
 	var wasDefault = false;
@@ -118,13 +113,6 @@
 		var html = document.documentElement;
 		var height = Math.max( body.scrollHeight, body.offsetHeight,
 							   html.clientHeight, html.scrollHeight, html.offsetHeight );
-
-		// If too small, hide the footer
-		if (height < 450) {
-			footer.style.display = "none";
-		} else {
-			footer.style.display = "block";
-		}
 
 	}
 
@@ -140,7 +128,6 @@
 		responseDiv = document.getElementById("responseDiv");
 		editHelp = document.getElementById("editHelp");
 		errorText = document.getElementById("errorText");
-		footer = document.getElementById("footer");
 
 		// If there's a hash, treat it as the input
 		if (window.location.hash.length > 0) {
@@ -268,7 +255,7 @@
 		<a href="http://thehivemind.xyz"><img id="mainTitle" src="logo.svg"/></a>
 		<div id="responseDiv">
 			<input maxlength="40" id="mainInput" type="text" placeholder="type to the hive mind" onkeydown="onKeyPress(event)"></input>
-			<p id="mainOutput"></p>
+			<p id="mainOutput">Here anyone can edit the responses, but only once per day per IP address. For more details, see the <a href="https://github.com/Lumorti/thehivemind">GitHub page</a>.</p>
 			<button id="editButton" onclick="startEdit()">edit response</p>
 		</div>
 		<div id="editDiv">
@@ -279,8 +266,5 @@
 			<button id="submitButton" onclick="submitEdit()">submit</p>
 		</div>
 	</div>
-	<footer id="footer">
-		for details, see the <a href="https://github.com/Lumorti/thehivemind">GitHub page</a>
-	</footer>
 </body>
 </html> 
