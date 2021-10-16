@@ -271,7 +271,7 @@ const server = http.createServer(async function (req, res) {
 
 // Delete the ip list directory
 function resetIPLists() {
-	fs.rmSync("./i/", {recursive: true});
+	fs.rmSync("./i/", {recursive: true, force: true});
 	salt = genSalt();
 }
 
