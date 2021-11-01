@@ -37,7 +37,11 @@ function replaceAll(str, find, replace) {
 function processQuestion(q) {
 
 	// Decode it
-	q = decodeURIComponent(q);
+	try {
+		q = decodeURIComponent(q);
+	} catch (e) {
+		return "";
+	}
 
 	// Max length
 	q = q.substr(0, maxQuestionLength);
@@ -60,7 +64,11 @@ function processQuestion(q) {
 function processAnswer(q) {
 
 	// Decode it
-	q = decodeURIComponent(q);
+	try {
+		q = decodeURIComponent(q);
+	} catch (e) {
+		return "";
+	}
 
 	// Max length
 	q = q.substr(0, maxAnswerLength);
