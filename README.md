@@ -1,12 +1,14 @@
 ![thehivemind.xyz logo](./logo.svg)
 
+[Click here to visit the site](https://thehivemind.xyz/)
+
 ### What is the hive mind?
 
-A website allowing communication with "the hive mind", an entity whose responses are set by you. Each IP address can edit the response of any page once per day, to any text they want. See something you don't like? Change it, no account required.
+A website allowing communication with "the hive mind", an entity whose responses are set by you. Each IP address can edit the response of each question once per day, to any text they want. See something you don't like? Change it, no account required.
 
 ### Won't people just be dicks?
 
-My hope is that on average people aren't too bad, but I understand that the page for "who should be president?" is going to be frequently changed and might sometimes be an extreme opinion from either side. I just hope the trolls are at least funny, although if you see something that could seriously offend someone, I urge you to change it. If, as a programmer, you notice something in the code that could be exploited, please contact me or open a GitHub issue.
+My hope is that (on average) people aren't too bad, but I understand that the page for "who should be president?" is going to be frequently changed and might sometimes be an extreme opinion from either side. I just hope the trolls are at least funny, although if you see something that could seriously offend someone, I urge you to change it. If, as a programmer, you notice something in the code that could be exploited, please contact me or open a GitHub issue.
 
 ### What data is stored?
 
